@@ -1737,6 +1737,11 @@ section {
   max-width: 138px;
 }
 
+.announcement-logo-campus {
+  height: 28px;
+  max-width: 154px;
+}
+
 .announcement-logo:hover {
   transform: translateY(-1px);
   filter: drop-shadow(0 0 8px rgba(255, 255, 255, 0.32));
@@ -1840,6 +1845,11 @@ body {
   .announcement-logo-wide {
     height: 23px;
     max-width: 118px;
+  }
+
+  .announcement-logo-campus {
+    height: 24px;
+    max-width: 128px;
   }
 
   .announcement-separator {
