@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="250" height="70" viewBox="0 0 250 70" role="img" aria-labelledby="title">
+  <title>DeutschPro Logo</title>
+  <g fill="none" fill-rule="evenodd">
+    <defs>
+      <clipPath id="pinClip">
+        <path d="M31.8 5.2C17.1 5.2 5.2 17.1 5.2 31.8c0 19.7 26.6 35.7 26.6 35.7s26.7-16 26.7-35.7C58.5 17.1 46.6 5.2 31.8 5.2z"/>
+      </clipPath>
+    </defs>
+    <path fill="#0b0b0d" d="M31.8 5.2C17.1 5.2 5.2 17.1 5.2 31.8c0 19.7 26.6 35.7 26.6 35.7s26.7-16 26.7-35.7C58.5 17.1 46.6 5.2 31.8 5.2z"/>
+    <g clip-path="url(#pinClip)">
+      <path fill="#050505" d="M-4 2h73v25H-4z"/>
+      <path fill="#dd0000" d="M-4 24h73v20H-4z" transform="rotate(-33 32.5 34)"/>
+      <path fill="#ffce00" d="M-4 42h73v26H-4z" transform="rotate(-33 32.5 55)"/>
+      <path fill="#000" fill-opacity=".28" d="M50.7-2 70 9.7-3.3 58-16.4 39z"/>
+    </g>
+    <path fill="#f7f7f7" d="M31.8 23.4a8.8 8.8 0 1 1 0 17.6 8.8 8.8 0 0 1 0-17.6z"/>
+    <text x="64" y="49" fill="#050505" font-family="Arial, Helvetica, sans-serif" font-size="34" font-style="italic" font-weight="800" letter-spacing="0">Deutsch</text>
+    <text x="192" y="49" fill="#f6a800" font-family="Arial, Helvetica, sans-serif" font-size="34" font-style="italic" font-weight="800" letter-spacing="0">Pro</text>
+  </g>
+</svg>
