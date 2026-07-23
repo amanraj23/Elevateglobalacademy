@@ -56,6 +56,31 @@ h6 {
   opacity: 1;
 }
 
+.whatsapp-float {
+  position: fixed;
+  left: 15px;
+  bottom: 15px;
+  z-index: 996;
+  background: #25d366;
+  color: #fff;
+  width: 54px;
+  height: 54px;
+  border-radius: 50%;
+  box-shadow: 0 8px 22px rgba(37, 211, 102, 0.35);
+  transition: all 0.3s ease;
+}
+
+.whatsapp-float i {
+  font-size: 28px;
+  line-height: 0;
+}
+
+.whatsapp-float:hover {
+  background: #1ebe5d;
+  color: #fff;
+  transform: translateY(-2px);
+}
+
 
 #preloader {
   position: fixed;
