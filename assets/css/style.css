@@ -1812,12 +1812,6 @@ section {
   display: none;
 }
 
-#google_translate_element,
-.goog-te-banner-frame.skiptranslate,
-.goog-te-gadget {
-  display: none !important;
-}
-
 body {
   top: 0 !important;
 }
