@@ -24,60 +24,171 @@
   const setupTranslation = () => {
     const languageSelect = select("#site-language");
     if (!languageSelect) return;
-    const savedLanguage = document.cookie.match(/googtrans=\/en\/([^;]+)/);
-    const availableLanguages = [...languageSelect.options].map((option) => option.value);
+    const translator = languageSelect.closest(".language-translator");
+    const topNav = select("#top-nav");
 
-    if (savedLanguage && availableLanguages.includes(savedLanguage[1])) {
-      languageSelect.value = savedLanguage[1];
+    if (translator && topNav && !topNav.contains(translator)) {
+      topNav.appendChild(translator);
     }
 
-    window.googleTranslateElementInit = () => {
-      new google.translate.TranslateElement(
-        {
-          pageLanguage: "en",
-          includedLanguages: availableLanguages.join(","),
-          autoDisplay: false,
-        },
-        "google_translate_element"
+    const pageLanguage = document.documentElement.lang || "en";
+    const availableLanguages = [...languageSelect.options].map((option) => option.value);
+    const translatedAttributeNames = ["alt", "aria-label", "placeholder", "title"];
+    const translationCache = new Map();
+    const originalTextNodes = [];
+    const originalAttributes = [];
+    let translationRunId = 0;
+
+    const shouldSkipElement = (element) => {
+      if (!element) return false;
+
+      return Boolean(
+        element.closest(
+          "script, style, noscript, iframe, svg, canvas, .notranslate, [data-no-translate]"
+        )
       );
     };
 
-    const loadGoogleTranslate = () => {
-      if (select('script[src*="translate.google.com/translate_a/element.js"]')) return;
+    const collectTranslatableContent = () => {
+      if (originalTextNodes.length || originalAttributes.length) return;
 
-      const script = document.createElement("script");
-      script.src = "//translate.google.com/translate_a/element.js?cb=googleTranslateElementInit";
-      document.body.appendChild(script);
-    };
+      const walker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT, {
+        acceptNode(node) {
+          if (!node.nodeValue.trim() || shouldSkipElement(node.parentElement)) {
+            return NodeFilter.FILTER_REJECT;
+          }
 
-    const saveLanguageCookie = (language) => {
-      const value = `/en/${language}`;
-      document.cookie = `googtrans=${value};path=/`;
+          return NodeFilter.FILTER_ACCEPT;
+        },
+      });
 
-      if (location.hostname.includes(".")) {
-        document.cookie = `googtrans=${value};path=/;domain=.${location.hostname}`;
+      while (walker.nextNode()) {
+        originalTextNodes.push({
+          node: walker.currentNode,
+          text: walker.currentNode.nodeValue,
+        });
       }
+
+      document.querySelectorAll("*").forEach((element) => {
+        if (shouldSkipElement(element)) return;
+
+        translatedAttributeNames.forEach((attributeName) => {
+          const value = element.getAttribute(attributeName);
+          if (!value || !value.trim()) return;
+
+          originalAttributes.push({
+            element,
+            attributeName,
+            text: value,
+          });
+        });
+      });
     };
 
-    const translatePage = (language, attempt = 0) => {
-      saveLanguageCookie(language);
+    const restoreOriginalContent = () => {
+      originalTextNodes.forEach((item) => {
+        item.node.nodeValue = item.text;
+      });
 
-      const googleCombo = select(".goog-te-combo");
-      if (googleCombo) {
-        googleCombo.value = language;
-        googleCombo.dispatchEvent(new Event("change"));
+      originalAttributes.forEach((item) => {
+        item.element.setAttribute(item.attributeName, item.text);
+      });
+    };
+
+    const translateText = async (text, language) => {
+      const trimmedText = text.trim();
+      if (!trimmedText || language === pageLanguage) return text;
+
+      const cacheKey = `${language}:${trimmedText}`;
+      if (translationCache.has(cacheKey)) {
+        return text.replace(trimmedText, translationCache.get(cacheKey));
+      }
+
+      const endpoint = new URL("https://translate.googleapis.com/translate_a/single");
+      endpoint.searchParams.set("client", "gtx");
+      endpoint.searchParams.set("sl", pageLanguage);
+      endpoint.searchParams.set("tl", language);
+      endpoint.searchParams.set("dt", "t");
+      endpoint.searchParams.set("q", trimmedText);
+
+      const response = await fetch(endpoint.toString());
+      if (!response.ok) {
+        throw new Error(`Translation request failed with status ${response.status}`);
+      }
+
+      const data = await response.json();
+      if (!Array.isArray(data[0])) return text;
+
+      const translatedText = data[0].map((segment) => segment[0]).join("");
+      translationCache.set(cacheKey, translatedText);
+
+      return text.replace(trimmedText, translatedText);
+    };
+
+    const translateItems = async (items, language, runId, applyTranslation) => {
+      const queue = [...items];
+      const workers = Array.from({ length: 6 }, async () => {
+        while (queue.length) {
+          const item = queue.shift();
+          const translatedText = await translateText(item.text, language);
+          if (runId === translationRunId) {
+            applyTranslation(item, translatedText);
+          }
+        }
+      });
+
+      const results = await Promise.allSettled(workers);
+      const failedResult = results.find((result) => result.status === "rejected");
+      if (failedResult) throw failedResult.reason;
+    };
+
+    const translatePage = async (language) => {
+      const runId = ++translationRunId;
+      collectTranslatableContent();
+      localStorage.setItem("siteLanguage", language);
+
+      languageSelect.disabled = true;
+      restoreOriginalContent();
+
+      if (language === pageLanguage) {
+        document.documentElement.lang = pageLanguage;
+        languageSelect.disabled = false;
         return;
       }
 
-      loadGoogleTranslate();
+      try {
+        await translateItems(originalTextNodes, language, runId, (item, translatedText) => {
+          item.node.nodeValue = translatedText;
+        });
 
-      if (attempt < 8) {
-        setTimeout(() => translatePage(language, attempt + 1), 500);
+        await translateItems(originalAttributes, language, runId, (item, translatedText) => {
+          item.element.setAttribute(item.attributeName, translatedText);
+        });
+
+        if (runId !== translationRunId) return;
+        document.documentElement.lang = language;
+      } catch (error) {
+        if (runId !== translationRunId) return;
+        console.warn("Unable to translate this page.", error);
+        restoreOriginalContent();
+        languageSelect.value = pageLanguage;
+        localStorage.setItem("siteLanguage", pageLanguage);
+        document.documentElement.lang = pageLanguage;
+      } finally {
+        languageSelect.disabled = false;
       }
     };
 
+    const savedLanguage = localStorage.getItem("siteLanguage");
+    if (savedLanguage && availableLanguages.includes(savedLanguage)) {
+      languageSelect.value = savedLanguage;
+    }
+
     languageSelect.addEventListener("change", () => translatePage(languageSelect.value));
-    loadGoogleTranslate();
+
+    if (languageSelect.value !== pageLanguage) {
+      translatePage(languageSelect.value);
+    }
   };
 
   setupTranslation();

@@ -1772,7 +1772,7 @@ section {
   margin-left: auto;
   color: #fff;
   flex: 0 0 auto;
-  padding-right: 12px;
+  padding-right: 24px;
 }
 
 .language-translator label {
@@ -1794,11 +1794,22 @@ section {
 }
 
 #top-nav .language-translator select {
+  width: 175px;
+  height: 45px;
   border-color: rgba(255, 255, 255, 0.45);
+  border-radius: 8px;
+  color: #12377d;
+  font-size: 18px;
+  line-height: 1;
+  padding: 8px 54px 8px 30px;
 }
 
 .language-translator select:focus {
   box-shadow: 0 0 0 2px rgba(102, 219, 243, 0.45);
+}
+
+#top-nav .language-translator label {
+  display: none;
 }
 
 #google_translate_element,
@@ -1884,7 +1895,9 @@ body {
   }
 
   #top-nav .language-translator select {
-    width: 112px;
+    width: min(290px, 64vw);
+    height: 64px;
+    font-size: 31px;
   }
 
 }
